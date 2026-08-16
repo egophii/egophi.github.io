@@ -1,0 +1,516 @@
+/* ==========================================
+   Global Styles
+========================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: #fafafa;
+    color: #222;
+    line-height: 1.7;
+}
+
+/* ==========================================
+   Typography & Section Titles
+========================================== */
+
+h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.15;
+}
+
+/* Centered section names */
+h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+p {
+    font-size: 1.05rem;
+    color: #555;
+    margin-bottom: 18px;
+}
+
+/* ==========================================
+   Containers
+========================================== */
+
+.container {
+    width: min(1100px, 90%);
+    margin: auto;
+}
+
+.wide-container {
+    width: min(1600px, 96%);
+    margin: auto;
+}
+
+.content-section {
+    padding: 40px 0;
+}
+
+/* ==========================================
+   Navigation Bar
+========================================== */
+
+header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, .95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #e8e8e8;
+    z-index: 1000;
+}
+
+.nav-container {
+    width: min(1300px, 92%);
+    margin: auto;
+    height: 72px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo a {
+    text-decoration: none;
+    color: #111;
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+nav {
+    display: flex;
+    gap: 32px;
+}
+
+nav a {
+    text-decoration: none;
+    color: #555;
+    font-weight: 500;
+    transition: .25s;
+}
+
+nav a:hover {
+    color: #0066ff;
+}
+
+/* ==========================================
+   Hero Section & Header Layout
+========================================== */
+
+.hero {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding-top: 100px;
+}
+
+.hero-content {
+    width: min(1000px, 90%);
+}
+
+.hero h2 {
+    margin-top: 15px;
+    font-size: 1.4rem;
+    font-weight: 400;
+    color: #555;
+    text-align: center;
+}
+
+.authors {
+    margin-top: 25px;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #222;
+}
+
+.affiliation {
+    margin-top: 10px;
+    color: #666;
+    font-size: 0.98rem;
+}
+
+.buttons {
+    margin-top: 30px;
+    margin-bottom: 35px;
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    background: #0066ff;
+    color: white;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: .25s;
+}
+
+.button:hover {
+    background: #0052d6;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 102, 255, .18);
+}
+
+/* Standalone Hero Video directly under action buttons */
+.hero-video-container {
+    margin-top: 20px;
+    margin-bottom: 35px;
+    width: 100%;
+}
+
+.hero-video-container video {
+    width: 100%;
+    max-height: 520px;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+    object-fit: cover;
+    display: block;
+}
+
+/* Light Blue Abstract Box */
+.abstract-box {
+    background-color: #f0f7ff;
+    border: 1px solid #bfdbfe;
+    border-left: 5px solid #0066ff;
+    border-radius: 12px;
+    padding: 30px 36px;
+    margin-top: 35px;
+    margin-bottom: 45px;
+    text-align: justify;
+    box-shadow: 0 4px 20px rgba(0, 102, 255, 0.05);
+}
+
+.abstract-box h3 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #0f172a;
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.abstract-box p {
+    color: #334155;
+    font-size: 1.02rem;
+    line-height: 1.75;
+    margin-bottom: 0;
+}
+
+/* ==========================================
+   Figures & Captions
+========================================== */
+
+.figure-container {
+    margin-top: 25px;
+    margin-bottom: 35px;
+    text-align: center;
+}
+
+.figure-container img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    border: 1px solid #eaeaea;
+}
+
+.figure-caption {
+    margin-top: 12px;
+    font-size: 0.93rem;
+    color: #444;
+    text-align: justify;
+    line-height: 1.6;
+}
+
+/* ==========================================
+   Qualitative 4-Column 3D Viewer Layout
+========================================== */
+
+.viewer-container {
+    margin-top: 25px;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr 1.2fr;
+    gap: 12px;
+    align-items: start;
+}
+
+.viewer-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.panel-title {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: #333;
+    margin-bottom: 8px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.viewer-container video, 
+.viewer-container canvas,
+#handsCanvasContainer,
+#objectCanvasContainer,
+#combinedCanvasContainer {
+    width: 100%;
+    height: 360px;
+    background: #f4f4f4;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    display: block;
+    overflow: hidden;
+    object-fit: cover;
+}
+
+/* ==========================================
+   Sequence Selector Gallery Row
+========================================== */
+
+.sequence-selector-container {
+    margin-top: 35px;
+    text-align: center;
+}
+
+.sequence-selector-container h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #333;
+}
+
+.sequence-thumbnails {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.seq-thumb {
+    width: 180px;
+    cursor: pointer;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 3px solid transparent;
+    background: #ffffff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    transition: all 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.seq-thumb video, 
+.seq-thumb img {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+    background: #eee;
+}
+
+.seq-thumb span {
+    padding: 8px 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #444;
+}
+
+.seq-thumb:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.seq-thumb.active {
+    border-color: #0066ff;
+    box-shadow: 0 0 16px rgba(0, 102, 255, 0.35);
+}
+
+.seq-thumb.active span {
+    color: #0066ff;
+}
+
+/* ==========================================
+   Academic Tables (LaTeX Booktabs Style)
+========================================== */
+
+.table-container {
+    margin-top: 35px;
+    margin-bottom: 45px;
+    width: 100%;
+}
+
+.table-caption {
+    font-size: 0.94rem;
+    color: #333;
+    margin-bottom: 12px;
+    line-height: 1.5;
+    text-align: left;
+}
+
+.table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    padding: 16px;
+}
+
+.academic-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.84rem;
+    color: #1a202c;
+}
+
+.academic-table th, 
+.academic-table td {
+    padding: 8px 12px;
+    white-space: nowrap;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.academic-table .left-align {
+    text-align: left !important;
+}
+
+/* Booktabs Rules */
+.academic-table thead tr:first-child th {
+    border-top: 2px solid #111;
+    padding-top: 10px;
+}
+
+.academic-table th.border-bottom-sub {
+    border-bottom: 1.5px solid #cbd5e1;
+}
+
+.academic-table thead tr:last-child th {
+    border-bottom: 2px solid #111;
+    padding-bottom: 10px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.academic-table tbody tr:last-child td {
+    border-bottom: 2px solid #111;
+    padding-bottom: 10px;
+}
+
+.academic-table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.academic-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+.academic-table tr.section-row td {
+    background-color: #f1f5f9;
+    border-top: 1px solid #cbd5e1;
+    border-bottom: 1px solid #cbd5e1;
+    padding: 8px 12px;
+    color: #0f172a;
+}
+
+.academic-table td.italic-text {
+    font-style: italic;
+    color: #64748b;
+}
+
+/* ==========================================
+   Citation Code Block & Footer
+========================================== */
+
+pre {
+    margin-top: 25px;
+    background: #f4f4f4;
+    padding: 22px;
+    border-radius: 12px;
+    overflow-x: auto;
+    font-size: .95rem;
+    border: 1px solid #e6e6e6;
+}
+
+code {
+    font-family: monospace;
+}
+
+footer {
+    margin-top: 60px;
+    padding: 40px;
+    text-align: center;
+    color: #888;
+    border-top: 1px solid #ececec;
+}
+
+/* ==========================================
+   Responsive Layout Adaptation
+========================================== */
+
+@media (max-width: 1300px) {
+    .viewer-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .nav-container {
+        flex-direction: column;
+        justify-content: center;
+        gap: 10px;
+        height: auto;
+        padding: 12px 0;
+    }
+
+    nav {
+        gap: 16px;
+        font-size: .9rem;
+    }
+
+    h1 {
+        font-size: 2.5rem;
+    }
+
+    .viewer-container {
+        grid-template-columns: 1fr;
+    }
+
+    .abstract-box {
+        padding: 20px 22px;
+    }
+
+    .seq-thumb {
+        width: 130px;
+    }
+
+    .seq-thumb video, .seq-thumb img {
+        height: 80px;
+    }
+}
