@@ -3,6 +3,7 @@
 // ==========================================
 
 const FPS = 30;
+const FPS_REAL = 24; // Add this for the real-world video frame rate
 
 let sequenceData = null;
 let fallbackFrameCounter = 0;
@@ -456,14 +457,14 @@ function animateReal(currentTime) {
     if (sequenceDataReal && sequenceDataReal.frames.length > 0) {
         let currentFrameIdx = 0;
 
-        // Drive the frame index directly by the real-world video's currentTime.
+        // Drive the frame index directly by the real-world video's currentTime using FPS_REAL
         if (video) {
             currentFrameIdx = Math.min(
-                Math.floor(video.currentTime * FPS),
+                Math.floor(video.currentTime * FPS_REAL),
                 sequenceDataReal.frames.length - 1
             );
         } else {
-            if (currentTime - lastTimeReal > (1000 / FPS)) {
+            if (currentTime - lastTimeReal > (1000 / FPS_REAL)) {
                 fallbackFrameCounterReal = (fallbackFrameCounterReal + 1) % sequenceDataReal.frames.length;
                 lastTimeReal = currentTime;
             }
