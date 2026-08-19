@@ -386,12 +386,15 @@ function animate(currentTime) {
     if (sequenceData && sequenceData.frames.length > 0) {
         let currentFrameIdx = 0;
 
-        if (video && !video.paused && video.currentTime > 0) {
+        // Drive the frame index directly by the video's currentTime.
+        // This ensures the meshes freeze when the video is paused and continue when played.
+        if (video) {
             currentFrameIdx = Math.min(
                 Math.floor(video.currentTime * FPS),
                 sequenceData.frames.length - 1
             );
         } else {
+            // Fallback only if the video element is missing entirely
             if (currentTime - lastTime > (1000 / FPS)) {
                 fallbackFrameCounter = (fallbackFrameCounter + 1) % sequenceData.frames.length;
                 lastTime = currentTime;
@@ -453,7 +456,8 @@ function animateReal(currentTime) {
     if (sequenceDataReal && sequenceDataReal.frames.length > 0) {
         let currentFrameIdx = 0;
 
-        if (video && !video.paused && video.currentTime > 0) {
+        // Drive the frame index directly by the real-world video's currentTime.
+        if (video) {
             currentFrameIdx = Math.min(
                 Math.floor(video.currentTime * FPS),
                 sequenceDataReal.frames.length - 1
