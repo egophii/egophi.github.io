@@ -53,16 +53,40 @@ function createViewport(containerId) {
 
 // Instantiate Viewports
 const vpHands = createViewport('handsCanvasContainer');
-const controlsHands = new THREE.OrbitControls(vpHands.camera, vpHands.renderer.domElement);
-controlsHands.enableDamping = true;
+const controlsHands = vpHands ? new THREE.OrbitControls(vpHands.camera, vpHands.renderer.domElement) : null;
+if (controlsHands) controlsHands.enableDamping = true;
 
 const vpObj = createViewport('objectCanvasContainer');
-const controlsObj = new THREE.OrbitControls(vpObj.camera, vpObj.renderer.domElement);
-controlsObj.enableDamping = true;
+const controlsObj = vpObj ? new THREE.OrbitControls(vpObj.camera, vpObj.renderer.domElement) : null;
+if (controlsObj) controlsObj.enableDamping = true;
 
 const vpCombined = createViewport('combinedCanvasContainer');
-const controlsCombined = new THREE.OrbitControls(vpCombined.camera, vpCombined.renderer.domElement);
-controlsCombined.enableDamping = true;
+const controlsCombined = vpCombined ? new THREE.OrbitControls(vpCombined.camera, vpCombined.renderer.domElement) : null;
+if (controlsCombined) controlsCombined.enableDamping = true;
+
+// ------------------------------------------
+// Real-World Viewports Setup
+// ------------------------------------------
+const vpHandsReal = createViewport('handsCanvasContainerReal');
+const controlsHandsReal = vpHandsReal ? new THREE.OrbitControls(vpHandsReal.camera, vpHandsReal.renderer.domElement) : null;
+if (controlsHandsReal) controlsHandsReal.enableDamping = true;
+
+const vpObjReal = createViewport('objectCanvasContainerReal');
+const controlsObjReal = vpObjReal ? new THREE.OrbitControls(vpObjReal.camera, vpObjReal.renderer.domElement) : null;
+if (controlsObjReal) controlsObjReal.enableDamping = true;
+
+const vpCombinedReal = createViewport('combinedCanvasContainerReal');
+const controlsCombinedReal = vpCombinedReal ? new THREE.OrbitControls(vpCombinedReal.camera, vpCombinedReal.renderer.domElement) : null;
+if (controlsCombinedReal) controlsCombinedReal.enableDamping = true;
+
+let sequenceDataReal = null;
+let fallbackFrameCounterReal = 0;
+let lastTimeReal = 0;
+let cameraInitializedReal = false;
+let isLoopRunningReal = false;
+
+let staticLeftMeshReal, staticRightMeshReal, staticObjMeshReal;
+let combLeftMeshReal, combRightMeshReal, combObjMeshReal;
 
 // ------------------------------------------
 // 2. Mesh Helpers
@@ -217,13 +241,13 @@ function loadSequence(folderName) {
     }
 
     // Remove existing meshes from scenes
-    if (staticLeftMesh) vpHands.scene.remove(staticLeftMesh);
-    if (staticRightMesh) vpHands.scene.remove(staticRightMesh);
-    if (staticObjMesh) vpObj.scene.remove(staticObjMesh);
+    if (staticLeftMesh && vpHands) vpHands.scene.remove(staticLeftMesh);
+    if (staticRightMesh && vpHands) vpHands.scene.remove(staticRightMesh);
+    if (staticObjMesh && vpObj) vpObj.scene.remove(staticObjMesh);
 
-    if (combLeftMesh) vpCombined.scene.remove(combLeftMesh);
-    if (combRightMesh) vpCombined.scene.remove(combRightMesh);
-    if (combObjMesh) vpCombined.scene.remove(combObjMesh);
+    if (combLeftMesh && vpCombined) vpCombined.scene.remove(combLeftMesh);
+    if (combRightMesh && vpCombined) vpCombined.scene.remove(combRightMesh);
+    if (combObjMesh && vpCombined) vpCombined.scene.remove(combObjMesh);
 
     cameraInitialized = false;
     fallbackFrameCounter = 0;
@@ -245,17 +269,17 @@ function loadSequence(folderName) {
 
         staticLeftMesh = createDynamicMesh(facesL, numStaticVertsL);
         updateMeshPositions(staticLeftMesh, staticVerts.v_l, scale);
-        vpHands.scene.add(staticLeftMesh);
+        if (vpHands) vpHands.scene.add(staticLeftMesh);
 
         staticRightMesh = createDynamicMesh(facesR, numStaticVertsR);
         updateMeshPositions(staticRightMesh, staticVerts.v_r, scale);
-        vpHands.scene.add(staticRightMesh);
+        if (vpHands) vpHands.scene.add(staticRightMesh);
 
         // --- FIELD 3: Static Centered GT Object ---
         const numStaticVertsO = staticVerts.v_o.length / 3;
         staticObjMesh = createDynamicMesh(facesO, numStaticVertsO);
         updateMeshPositions(staticObjMesh, staticVerts.v_o, scale);
-        vpObj.scene.add(staticObjMesh);
+        if (vpObj) vpObj.scene.add(staticObjMesh);
 
         // --- FIELD 4: Combined Moving Viewport ---
         const numDynamicVertsL = firstFrame.v_l.length / 3;
@@ -266,9 +290,11 @@ function loadSequence(folderName) {
         combRightMesh = createDynamicMesh(facesR, numDynamicVertsR);
         combObjMesh = createDynamicMesh(facesO, numDynamicVertsO);
 
-        vpCombined.scene.add(combLeftMesh);
-        vpCombined.scene.add(combRightMesh);
-        vpCombined.scene.add(combObjMesh);
+        if (vpCombined) {
+            vpCombined.scene.add(combLeftMesh);
+            vpCombined.scene.add(combRightMesh);
+            vpCombined.scene.add(combObjMesh);
+        }
 
         if (!isLoopRunning) {
             isLoopRunning = true;
@@ -276,6 +302,76 @@ function loadSequence(folderName) {
         }
     }).catch(err => {
         console.error("❌ Error loading sequence assets:", err);
+    });
+}
+
+function loadSequenceReal(folderName) {
+    const dataPath = `sequences/${folderName}`;
+
+    const video = document.getElementById('rgbVideoReal');
+    if (video) {
+        video.src = `${dataPath}/rgb_video.mp4`;
+        video.play().catch(() => {});
+    }
+
+    if (staticLeftMeshReal && vpHandsReal) vpHandsReal.scene.remove(staticLeftMeshReal);
+    if (staticRightMeshReal && vpHandsReal) vpHandsReal.scene.remove(staticRightMeshReal);
+    if (staticObjMeshReal && vpObjReal) vpObjReal.scene.remove(staticObjMeshReal);
+
+    if (combLeftMeshReal && vpCombinedReal) vpCombinedReal.scene.remove(combLeftMeshReal);
+    if (combRightMeshReal && vpCombinedReal) vpCombinedReal.scene.remove(combRightMeshReal);
+    if (combObjMeshReal && vpCombinedReal) vpCombinedReal.scene.remove(combObjMeshReal);
+
+    cameraInitializedReal = false;
+    fallbackFrameCounterReal = 0;
+
+    Promise.all([
+        fetch(`${dataPath}/motion_sequence.json?v=${Date.now()}`).then(r => r.json()),
+        fetch(`${dataPath}/faces_hand_left.json`).then(r => r.json()),
+        fetch(`${dataPath}/faces_hand_right.json`).then(r => r.json()),
+        fetch(`${dataPath}/faces_obj.json`).then(r => r.json())
+    ]).then(([data, facesL, facesR, facesO]) => {
+        sequenceDataReal = data;
+        const firstFrame = sequenceDataReal.frames[0];
+        const scale = sequenceDataReal.scale || 1000.0;
+        const staticVerts = sequenceDataReal.static_verts;
+
+        const numStaticVertsL = staticVerts.v_l.length / 3;
+        const numStaticVertsR = staticVerts.v_r.length / 3;
+
+        staticLeftMeshReal = createDynamicMesh(facesL, numStaticVertsL);
+        updateMeshPositions(staticLeftMeshReal, staticVerts.v_l, scale);
+        if (vpHandsReal) vpHandsReal.scene.add(staticLeftMeshReal);
+
+        staticRightMeshReal = createDynamicMesh(facesR, numStaticVertsR);
+        updateMeshPositions(staticRightMeshReal, staticVerts.v_r, scale);
+        if (vpHandsReal) vpHandsReal.scene.add(staticRightMeshReal);
+
+        const numStaticVertsO = staticVerts.v_o.length / 3;
+        staticObjMeshReal = createDynamicMesh(facesO, numStaticVertsO);
+        updateMeshPositions(staticObjMeshReal, staticVerts.v_o, scale);
+        if (vpObjReal) vpObjReal.scene.add(staticObjMeshReal);
+
+        const numDynamicVertsL = firstFrame.v_l.length / 3;
+        const numDynamicVertsR = firstFrame.v_r.length / 3;
+        const numDynamicVertsO = firstFrame.v_o.length / 3;
+
+        combLeftMeshReal = createDynamicMesh(facesL, numDynamicVertsL);
+        combRightMeshReal = createDynamicMesh(facesR, numDynamicVertsR);
+        combObjMeshReal = createDynamicMesh(facesO, numDynamicVertsO);
+
+        if (vpCombinedReal) {
+            vpCombinedReal.scene.add(combLeftMeshReal);
+            vpCombinedReal.scene.add(combRightMeshReal);
+            vpCombinedReal.scene.add(combObjMeshReal);
+        }
+
+        if (!isLoopRunningReal) {
+            isLoopRunningReal = true;
+            animateReal(0);
+        }
+    }).catch(err => {
+        console.error("❌ Error loading real-world sequence assets:", err);
     });
 }
 
@@ -332,32 +428,99 @@ function animate(currentTime) {
 
             // 3. Frame cameras on first frame of loaded sequence
             if (!cameraInitialized) {
-                frameMeshes([staticLeftMesh, staticRightMesh], vpHands.camera, controlsHands);
-                frameMeshes([staticObjMesh], vpObj.camera, controlsObj);
-                alignCameraToEgoView([combLeftMesh, combRightMesh, combObjMesh], vpCombined.camera, controlsCombined);
+                if (vpHands) frameMeshes([staticLeftMesh, staticRightMesh], vpHands.camera, controlsHands);
+                if (vpObj) frameMeshes([staticObjMesh], vpObj.camera, controlsObj);
+                if (vpCombined) alignCameraToEgoView([combLeftMesh, combRightMesh, combObjMesh], vpCombined.camera, controlsCombined);
                 cameraInitialized = true;
             }
         }
     }
 
-    controlsHands.update();
-    controlsObj.update();
-    controlsCombined.update();
+    if (controlsHands) controlsHands.update();
+    if (controlsObj) controlsObj.update();
+    if (controlsCombined) controlsCombined.update();
 
-    vpHands.renderer.render(vpHands.scene, vpHands.camera);
-    vpObj.renderer.render(vpObj.scene, vpObj.camera);
-    vpCombined.renderer.render(vpCombined.scene, vpCombined.camera);
+    if (vpHands) vpHands.renderer.render(vpHands.scene, vpHands.camera);
+    if (vpObj) vpObj.renderer.render(vpObj.scene, vpObj.camera);
+    if (vpCombined) vpCombined.renderer.render(vpCombined.scene, vpCombined.camera);
+}
+
+function animateReal(currentTime) {
+    requestAnimationFrame(animateReal);
+
+    const video = document.getElementById('rgbVideoReal');
+
+    if (sequenceDataReal && sequenceDataReal.frames.length > 0) {
+        let currentFrameIdx = 0;
+
+        if (video && !video.paused && video.currentTime > 0) {
+            currentFrameIdx = Math.min(
+                Math.floor(video.currentTime * FPS),
+                sequenceDataReal.frames.length - 1
+            );
+        } else {
+            if (currentTime - lastTimeReal > (1000 / FPS)) {
+                fallbackFrameCounterReal = (fallbackFrameCounterReal + 1) % sequenceDataReal.frames.length;
+                lastTimeReal = currentTime;
+            }
+            currentFrameIdx = fallbackFrameCounterReal;
+        }
+
+        const frameData = sequenceDataReal.frames[currentFrameIdx];
+
+        if (frameData) {
+            const isForceMode = sequenceDataReal.contact_type === 'force_mag' || frameData.f_l !== undefined;
+
+            const dataL = isForceMode ? frameData.f_l : frameData.c_l;
+            const dataR = isForceMode ? frameData.f_r : frameData.c_r;
+            const dataO = isForceMode ? frameData.f_o : frameData.c_o;
+
+            const scale = sequenceDataReal.scale || 1000.0;
+            const staticVerts = sequenceDataReal.static_verts;
+
+            updateMeshColors(staticLeftMeshReal, dataL, staticVerts.v_l.length / 3, isForceMode);
+            updateMeshColors(staticRightMeshReal, dataR, staticVerts.v_r.length / 3, isForceMode);
+            updateMeshColors(staticObjMeshReal, dataO, staticVerts.v_o.length / 3, isForceMode);
+
+            updateMeshPositions(combLeftMeshReal, frameData.v_l, scale);
+            updateMeshColors(combLeftMeshReal, dataL, frameData.v_l.length / 3, isForceMode);
+
+            updateMeshPositions(combRightMeshReal, frameData.v_r, scale);
+            updateMeshColors(combRightMeshReal, dataR, frameData.v_r.length / 3, isForceMode);
+
+            updateMeshPositions(combObjMeshReal, frameData.v_o, scale);
+            updateMeshColors(combObjMeshReal, dataO, frameData.v_o.length / 3, isForceMode);
+
+            if (!cameraInitializedReal) {
+                if (vpHandsReal) frameMeshes([staticLeftMeshReal, staticRightMeshReal], vpHandsReal.camera, controlsHandsReal);
+                if (vpObjReal) frameMeshes([staticObjMeshReal], vpObjReal.camera, controlsObjReal);
+                if (vpCombinedReal) alignCameraToEgoView([combLeftMeshReal, combRightMeshReal, combObjMeshReal], vpCombinedReal.camera, controlsCombinedReal);
+                cameraInitializedReal = true;
+            }
+        }
+    }
+
+    if (controlsHandsReal) controlsHandsReal.update();
+    if (controlsObjReal) controlsObjReal.update();
+    if (controlsCombinedReal) controlsCombinedReal.update();
+
+    if (vpHandsReal) vpHandsReal.renderer.render(vpHandsReal.scene, vpHandsReal.camera);
+    if (vpObjReal) vpObjReal.renderer.render(vpObjReal.scene, vpObjReal.camera);
+    if (vpCombinedReal) vpCombinedReal.renderer.render(vpCombinedReal.scene, vpCombinedReal.camera);
 }
 
 // ------------------------------------------
 // 6. Initialization & Event Handlers
 // ------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
-    // Initial sequence load
+    // Initial sequence load (ARCTIC)
     loadSequence('scissors_use_02');
 
-    // Click handlers for sequence gallery thumbnails
-    const thumbnails = document.querySelectorAll('.seq-thumb');
+    // Initial sequence load (Real-World)
+    loadSequenceReal('realworld_cube');
+
+    // Click handlers for sequence gallery thumbnails (ARCTIC)
+    const thumbnails = document.querySelectorAll('.seq-thumb:not(.seq-thumb-real)');
     thumbnails.forEach(thumb => {
         thumb.addEventListener('click', () => {
             const sequenceFolder = thumb.getAttribute('data-sequence');
@@ -368,11 +531,24 @@ document.addEventListener('DOMContentLoaded', () => {
             loadSequence(sequenceFolder);
         });
     });
+
+    // Click handlers for real-world sequence thumbnails
+    const thumbnailsReal = document.querySelectorAll('.seq-thumb-real');
+    thumbnailsReal.forEach(thumb => {
+        thumb.addEventListener('click', () => {
+            const sequenceFolder = thumb.getAttribute('data-sequence');
+
+            thumbnailsReal.forEach(t => t.classList.remove('active'));
+            thumb.classList.add('active');
+
+            loadSequenceReal(sequenceFolder);
+        });
+    });
 });
 
 // Responsive resize
 window.addEventListener('resize', () => {
-    [vpHands, vpObj, vpCombined].forEach(vp => {
+    [vpHands, vpObj, vpCombined, vpHandsReal, vpObjReal, vpCombinedReal].forEach(vp => {
         if (vp && vp.container) {
             vp.camera.aspect = vp.container.clientWidth / 360;
             vp.camera.updateProjectionMatrix();
