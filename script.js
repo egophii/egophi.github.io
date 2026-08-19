@@ -228,6 +228,28 @@ function alignCameraToEgoView(meshes, camera, controls = null) {
     }
 }
 
+
+
+function trackDynamicCenter(meshes, controls) {
+    if (!controls) return;
+    const box = new THREE.Box3();
+    let valid = false;
+    
+    meshes.forEach(mesh => {
+        if (mesh && mesh.geometry && mesh.geometry.boundingBox) {
+            box.union(mesh.geometry.boundingBox);
+            valid = true;
+        }
+    });
+
+    if (valid) {
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+        // Using lerp adds a tiny bit of smoothing so the camera doesn't jitter
+        controls.target.lerp(center, 0.15); 
+    }
+}
+
 // ------------------------------------------
 // 4. Load Sequence Data
 // ------------------------------------------
@@ -440,6 +462,8 @@ function animate(currentTime) {
         }
     }
 
+    // Continuously track the center of the dynamic meshes in the Full Motion view
+    trackDynamicCenter([combLeftMesh, combRightMesh, combObjMesh], controlsCombined);
     if (controlsHands) controlsHands.update();
     if (controlsObj) controlsObj.update();
     if (controlsCombined) controlsCombined.update();
@@ -505,6 +529,8 @@ function animateReal(currentTime) {
         }
     }
 
+    // Continuously track the center of the dynamic meshes in the real-world Full Motion view
+    trackDynamicCenter([combLeftMeshReal, combRightMeshReal, combObjMeshReal], controlsCombinedReal);
     if (controlsHandsReal) controlsHandsReal.update();
     if (controlsObjReal) controlsObjReal.update();
     if (controlsCombinedReal) controlsCombinedReal.update();
