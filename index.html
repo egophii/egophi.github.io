@@ -397,9 +397,52 @@
     <!-- Real World Evaluation Section -->
     <!-- ===================================== -->
     <section id="real-world" class="content-section">
-        <div class="container">
+        <div class="wide-container">
             <h2>Real world evaluation</h2>
 
+            <!-- Real-World Qualitative 3D Synchronizer Viewer -->
+            <div class="viewer-container">
+                <!-- Field 1: RGB Video -->
+                <div class="viewer-card card-wide">
+                    <div class="panel-title">RGB Video</div>
+                    <video id="rgbVideoReal" src="sequences/realworld_cube/rgb_video.mp4" controls loop muted autoplay playsinline></video>
+                </div>
+
+                <!-- Field 2: Both Hands Combined -->
+                <div class="viewer-card card-narrow">
+                    <div class="panel-title">Hands force</div>
+                    <div id="handsCanvasContainerReal"></div>
+                </div>
+
+                <!-- Field 3: Static Object -->
+                <div class="viewer-card card-narrow">
+                    <div class="panel-title">Object force</div>
+                    <div id="objectCanvasContainerReal"></div>
+                </div>
+
+                <!-- Field 4: Combined Moving View -->
+                <div class="viewer-card card-wide">
+                    <div class="panel-title">Full Motion</div>
+                    <div id="combinedCanvasContainerReal"></div>
+                </div>
+            </div>
+
+            <!-- Real-World Sequence Selector Row -->
+            <div class="sequence-selector-container">
+                <div class="sequence-thumbnails">
+                    <div class="seq-thumb seq-thumb-real active" data-sequence="realworld_cube">
+                        <video src="sequences/realworld_cube/rgb_video.mp4#t=0.1" muted preload="metadata"></video>
+                        <span>real-world cube</span>
+                    </div>
+                    <div class="seq-thumb seq-thumb-real" data-sequence="realworld_cylinder">
+                        <video src="sequences/realworld_cylinder/rgb_video.mp4#t=0.1" muted preload="metadata"></video>
+                        <span>real-world cylinder</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
             <!-- Image 1 -->
             <div class="figure-container">
                 <img src="figures/real_world_exp_vis.png" alt="Real World Experiment Visualizations">
