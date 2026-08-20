@@ -157,19 +157,32 @@ nav a:hover {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 12px 24px;
-    background: #0066ff;
+    padding: 12px 28px; /* Slightly wider padding for the ellipse shape */
+    
+    /* Fancy transparent gradient (lighter blue to darker blue) */
+    background: linear-gradient(135deg, rgba(74, 144, 226, 0.8), rgba(0, 102, 255, 0.8));
+    
+    /* The glassmorphism blur effect */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px); /* Safari support */
+    
+    /* Subtle glossy border */
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    
     color: white;
-    border-radius: 10px;
+    border-radius: 50px; /* Turns the box into a pill/ellipse shape */
     text-decoration: none;
     font-weight: 600;
-    transition: .25s;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 102, 255, 0.15);
 }
 
 .button:hover {
-    background: #0052d6;
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(0, 102, 255, .18);
+    /* Darken and solidify slightly on hover */
+    background: linear-gradient(135deg, rgba(74, 144, 226, 0.95), rgba(0, 102, 255, 0.95));
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 102, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.7);
 }
 
 /* Standalone Hero Video directly under action buttons */
