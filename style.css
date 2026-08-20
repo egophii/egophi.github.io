@@ -157,32 +157,24 @@ nav a:hover {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 12px 28px; /* Slightly wider padding for the ellipse shape */
+    padding: 12px 32px; /* Wider padding for the ellipse look */
     
-    /* Fancy transparent gradient (lighter blue to darker blue) */
-    background: linear-gradient(135deg, rgba(74, 144, 226, 0.8), rgba(0, 102, 255, 0.8));
+    background: #f0f7ff; /* Light blue background */
+    color: #111111; /* Black text */
+    border: 2px solid #bfdbfe; /* Light blue outline to match the image style */
+    border-radius: 50px; /* Creates the pill/ellipse shape */
     
-    /* The glassmorphism blur effect */
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px); /* Safari support */
-    
-    /* Subtle glossy border */
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    
-    color: white;
-    border-radius: 50px; /* Turns the box into a pill/ellipse shape */
     text-decoration: none;
     font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 102, 255, 0.15);
+    font-size: 1.05rem;
+    transition: all 0.2s ease;
 }
 
 .button:hover {
-    /* Darken and solidify slightly on hover */
-    background: linear-gradient(135deg, rgba(74, 144, 226, 0.95), rgba(0, 102, 255, 0.95));
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0, 102, 255, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.7);
+    background: #dbeafe; /* Slightly darker light blue on hover */
+    border-color: #93c5fd; /* Slightly darker border on hover */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 102, 255, 0.08); /* Very soft shadow */
 }
 
 /* Standalone Hero Video directly under action buttons */
