@@ -1,16 +1,9 @@
-The issues you are seeing (mirrored hands, views from underneath, and the inability to rotate) are all caused by the exact same piece of logic: the `EGO_VIEW_DISTANCE` variable and the `computeEgoViewPosition` function.
-
-Because your data is already recorded in the camera's true coordinate space, the exact point of view of the ego-camera is simply `(0, 0, 0)`. By trying to enforce a fixed `0.45` distance backward, objects that were held close to the face caused the code to push the camera *past* the origin point. This effectively meant the camera was looking from behind, which caused the left/right mirroring and upside-down views! Furthermore, enforcing that position every frame blocked `OrbitControls` from letting you rotate it.
-
-Here is the final, completely corrected `script.js` file that resolves all of these issues while keeping everything else exactly the same.
-
-```javascript
 // ==========================================
 // Interactive WebGL Hand & Object Synchronizer
 // ==========================================
 
 const FPS = 30;
-const FPS_REAL = 24; // Add this for the real-world video frame rate
+const FPS_REAL = 24; 
 
 let sequenceData = null;
 let fallbackFrameCounter = 0;
@@ -28,9 +21,9 @@ let combLeftMesh, combRightMesh, combObjMesh;
 const JET_LUT = new Float32Array(256 * 3);
 for (let i = 0; i < 256; i++) {
     const v = i / 255.0;
-    JET_LUT[i * 3 + 0] = Math.min(Math.max(1.5 - Math.abs(v * 4.0 - 3.0), 0.0), 1.0); // Red
-    JET_LUT[i * 3 + 1] = Math.min(Math.max(1.5 - Math.abs(v * 4.0 - 2.0), 0.0), 1.0); // Green
-    JET_LUT[i * 3 + 2] = Math.min(Math.max(1.5 - Math.abs(v * 4.0 - 1.0), 0.0), 1.0); // Blue
+    JET_LUT[i * 3 + 0] = Math.min(Math.max(1.5 - Math.abs(v * 4.0 - 3.0), 0.0), 1.0); 
+    JET_LUT[i * 3 + 1] = Math.min(Math.max(1.5 - Math.abs(v * 4.0 - 2.0), 0.0), 1.0); 
+    JET_LUT[i * 3 + 2] = Math.min(Math.max(1.5 - Math.abs(v * 4.0 - 1.0), 0.0), 1.0); 
 }
 
 // ------------------------------------------
@@ -69,8 +62,6 @@ const controlsObj = vpObj ? new THREE.OrbitControls(vpObj.camera, vpObj.renderer
 if (controlsObj) controlsObj.enableDamping = true;
 
 const vpCombined = createViewport('combinedCanvasContainer');
-// Flip the camera's up vector so the ego-view (Full Motion) render matches
-// the RGB video's orientation instead of appearing upside-down.
 if (vpCombined) vpCombined.camera.up.set(0, -1, 0);
 const controlsCombined = vpCombined ? new THREE.OrbitControls(vpCombined.camera, vpCombined.renderer.domElement) : null;
 if (controlsCombined) controlsCombined.enableDamping = true;
@@ -87,8 +78,6 @@ const controlsObjReal = vpObjReal ? new THREE.OrbitControls(vpObjReal.camera, vp
 if (controlsObjReal) controlsObjReal.enableDamping = true;
 
 const vpCombinedReal = createViewport('combinedCanvasContainerReal');
-// Flip the camera's up vector so the ego-view (Full Motion) render matches
-// the RGB video's orientation instead of appearing upside-down.
 if (vpCombinedReal) vpCombinedReal.camera.up.set(0, -1, 0);
 const controlsCombinedReal = vpCombinedReal ? new THREE.OrbitControls(vpCombinedReal.camera, vpCombinedReal.renderer.domElement) : null;
 if (controlsCombinedReal) controlsCombinedReal.enableDamping = true;
@@ -242,41 +231,18 @@ function alignCameraToEgoView(meshes, camera, controls = null) {
     }
 }
 
-function trackDynamicCenter(meshes, controls) {
-    if (!controls) return;
-    const box = new THREE.Box3();
-    let valid = false;
-    
-    meshes.forEach(mesh => {
-        if (mesh && mesh.geometry && mesh.geometry.boundingBox) {
-            box.union(mesh.geometry.boundingBox);
-            valid = true;
-        }
-    });
-
-    if (valid) {
-        const center = new THREE.Vector3();
-        box.getCenter(center);
-        // We only smoothly track the center so rotation orbits around the moving objects.
-        // We no longer force camera.position here, allowing the user to rotate freely!
-        controls.target.lerp(center, 0.15);
-    }
-}
-
 // ------------------------------------------
 // 4. Load Sequence Data
 // ------------------------------------------
 function loadSequence(folderName) {
     const dataPath = `sequences/${folderName}`;
 
-    // Update main RGB video player
     const video = document.getElementById('rgbVideo');
     if (video) {
         video.src = `${dataPath}/rgb_video.mp4`;
         video.play().catch(() => {});
     }
 
-    // Remove existing meshes from scenes
     if (staticLeftMesh && vpHands) vpHands.scene.remove(staticLeftMesh);
     if (staticRightMesh && vpHands) vpHands.scene.remove(staticRightMesh);
     if (staticObjMesh && vpObj) vpObj.scene.remove(staticObjMesh);
@@ -299,7 +265,6 @@ function loadSequence(folderName) {
         const scale = sequenceData.scale || 1000.0;
         const staticVerts = sequenceData.static_verts;
 
-        // --- FIELD 2: Static Palmar Hands ---
         const numStaticVertsL = staticVerts.v_l.length / 3;
         const numStaticVertsR = staticVerts.v_r.length / 3;
 
@@ -311,13 +276,11 @@ function loadSequence(folderName) {
         updateMeshPositions(staticRightMesh, staticVerts.v_r, scale);
         if (vpHands) vpHands.scene.add(staticRightMesh);
 
-        // --- FIELD 3: Static Centered GT Object ---
         const numStaticVertsO = staticVerts.v_o.length / 3;
         staticObjMesh = createDynamicMesh(facesO, numStaticVertsO);
         updateMeshPositions(staticObjMesh, staticVerts.v_o, scale);
         if (vpObj) vpObj.scene.add(staticObjMesh);
 
-        // --- FIELD 4: Combined Moving Viewport ---
         const numDynamicVertsL = firstFrame.v_l.length / 3;
         const numDynamicVertsR = firstFrame.v_r.length / 3;
         const numDynamicVertsO = firstFrame.v_o.length / 3;
@@ -326,7 +289,6 @@ function loadSequence(folderName) {
         combRightMesh = createDynamicMesh(facesR, numDynamicVertsR);
         combObjMesh = createDynamicMesh(facesO, numDynamicVertsO);
 
-        // Populate the combined meshes with the first frame's positions right away
         updateMeshPositions(combLeftMesh, firstFrame.v_l, scale);
         updateMeshPositions(combRightMesh, firstFrame.v_r, scale);
         updateMeshPositions(combObjMesh, firstFrame.v_o, scale);
@@ -337,7 +299,6 @@ function loadSequence(folderName) {
             vpCombined.scene.add(combObjMesh);
         }
 
-        // Frame all three viewports immediately
         if (vpHands) frameMeshes([staticLeftMesh, staticRightMesh], vpHands.camera, controlsHands);
         if (vpObj) frameMeshes([staticObjMesh], vpObj.camera, controlsObj);
         if (vpCombined) alignCameraToEgoView([combLeftMesh, combRightMesh, combObjMesh], vpCombined.camera, controlsCombined);
@@ -489,7 +450,6 @@ function animate(currentTime) {
         }
     }
 
-    trackDynamicCenter([combLeftMesh, combRightMesh, combObjMesh], controlsCombined);
     if (controlsHands) controlsHands.update();
     if (controlsObj) controlsObj.update();
     if (controlsCombined) controlsCombined.update();
@@ -554,7 +514,6 @@ function animateReal(currentTime) {
         }
     }
 
-    trackDynamicCenter([combLeftMeshReal, combRightMeshReal, combObjMeshReal], controlsCombinedReal);
     if (controlsHandsReal) controlsHandsReal.update();
     if (controlsObjReal) controlsObjReal.update();
     if (controlsCombinedReal) controlsCombinedReal.update();
@@ -611,5 +570,3 @@ window.addEventListener('resize', () => {
         }
     });
 });
-
-```
