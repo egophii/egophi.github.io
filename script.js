@@ -5,6 +5,13 @@
 const FPS = 30;
 const FPS_REAL = 24; // Add this for the real-world video frame rate
 
+// Fixed distance (in the same units as the mesh data, i.e. meters after the
+// /scale division) that the stabilized "Full Motion" ego-camera is held back
+// from the hands/object, so every sequence is framed consistently instead of
+// varying with how close the participant's head happened to be to their
+// hands in that particular recording. Tune this to taste.
+const EGO_VIEW_DISTANCE = 0.45;
+
 let sequenceData = null;
 let fallbackFrameCounter = 0;
 let lastTime = 0;
@@ -209,6 +216,24 @@ function frameMeshes(meshes, camera, controls = null) {
     }
 }
 
+// Computes the stabilized ego-view camera position for a given hands/object
+// bounding-box center: it stays on the same line that the true head-camera
+// (sitting at the data's own origin) used to look at the hands, but pulled
+// back to a fixed, consistent EGO_VIEW_DISTANCE so every sequence is framed
+// the same way ("looking down at my hands from a comfortable, constant
+// distance") rather than reproducing the exact, variable recorded distance.
+function computeEgoViewPosition(center) {
+    let viewDir = center.clone();
+    if (viewDir.lengthSq() < 1e-8) {
+        // Degenerate case (content sits essentially at the origin) — fall back
+        // to a generic forward direction so the camera doesn't collapse onto the target.
+        viewDir.set(0, 0, 1);
+    }
+    viewDir.normalize();
+
+    return center.clone().addScaledVector(viewDir, -EGO_VIEW_DISTANCE);
+}
+
 function alignCameraToEgoView(meshes, camera, controls = null) {
     const box = new THREE.Box3();
     meshes.forEach(mesh => {
@@ -225,7 +250,7 @@ function alignCameraToEgoView(meshes, camera, controls = null) {
     const center = new THREE.Vector3();
     box.getCenter(center);
 
-    camera.position.set(0, 0, 0);
+    camera.position.copy(computeEgoViewPosition(center));
     camera.lookAt(center);
 
     if (controls) {
@@ -236,7 +261,7 @@ function alignCameraToEgoView(meshes, camera, controls = null) {
 
 
 
-function trackDynamicCenter(meshes, controls) {
+function trackDynamicCenter(meshes, camera, controls) {
     if (!controls) return;
     const box = new THREE.Box3();
     let valid = false;
@@ -251,8 +276,14 @@ function trackDynamicCenter(meshes, controls) {
     if (valid) {
         const center = new THREE.Vector3();
         box.getCenter(center);
-        // Using lerp adds a tiny bit of smoothing so the camera doesn't jitter
-        controls.target.lerp(center, 0.15); 
+        // Using lerp adds a tiny bit of smoothing so the camera doesn't jitter.
+        // Keep the camera at the fixed EGO_VIEW_DISTANCE from the moving
+        // centroid every frame, so the "looking down at my hands" framing
+        // stays consistent throughout the whole clip, not just on load.
+        if (camera) {
+            camera.position.lerp(computeEgoViewPosition(center), 0.15);
+        }
+        controls.target.lerp(center, 0.15);
     }
 }
 
@@ -501,7 +532,7 @@ function animate(currentTime) {
     }
 
     // Continuously track the center of the dynamic meshes in the Full Motion view
-    trackDynamicCenter([combLeftMesh, combRightMesh, combObjMesh], controlsCombined);
+    trackDynamicCenter([combLeftMesh, combRightMesh, combObjMesh], vpCombined ? vpCombined.camera : null, controlsCombined);
     if (controlsHands) controlsHands.update();
     if (controlsObj) controlsObj.update();
     if (controlsCombined) controlsCombined.update();
@@ -568,7 +599,7 @@ function animateReal(currentTime) {
     }
 
     // Continuously track the center of the dynamic meshes in the real-world Full Motion view
-    trackDynamicCenter([combLeftMeshReal, combRightMeshReal, combObjMeshReal], controlsCombinedReal);
+    trackDynamicCenter([combLeftMeshReal, combRightMeshReal, combObjMeshReal], vpCombinedReal ? vpCombinedReal.camera : null, controlsCombinedReal);
     if (controlsHandsReal) controlsHandsReal.update();
     if (controlsObjReal) controlsObjReal.update();
     if (controlsCombinedReal) controlsCombinedReal.update();
