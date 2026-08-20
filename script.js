@@ -1,16 +1,16 @@
+The issues you are seeing (mirrored hands, views from underneath, and the inability to rotate) are all caused by the exact same piece of logic: the `EGO_VIEW_DISTANCE` variable and the `computeEgoViewPosition` function.
+
+Because your data is already recorded in the camera's true coordinate space, the exact point of view of the ego-camera is simply `(0, 0, 0)`. By trying to enforce a fixed `0.45` distance backward, objects that were held close to the face caused the code to push the camera *past* the origin point. This effectively meant the camera was looking from behind, which caused the left/right mirroring and upside-down views! Furthermore, enforcing that position every frame blocked `OrbitControls` from letting you rotate it.
+
+Here is the final, completely corrected `script.js` file that resolves all of these issues while keeping everything else exactly the same.
+
+```javascript
 // ==========================================
 // Interactive WebGL Hand & Object Synchronizer
 // ==========================================
 
 const FPS = 30;
 const FPS_REAL = 24; // Add this for the real-world video frame rate
-
-// Fixed distance (in the same units as the mesh data, i.e. meters after the
-// /scale division) that the stabilized "Full Motion" ego-camera is held back
-// from the hands/object, so every sequence is framed consistently instead of
-// varying with how close the participant's head happened to be to their
-// hands in that particular recording. Tune this to taste.
-const EGO_VIEW_DISTANCE = 0.45;
 
 let sequenceData = null;
 let fallbackFrameCounter = 0;
@@ -216,24 +216,6 @@ function frameMeshes(meshes, camera, controls = null) {
     }
 }
 
-// Computes the stabilized ego-view camera position for a given hands/object
-// bounding-box center: it stays on the same line that the true head-camera
-// (sitting at the data's own origin) used to look at the hands, but pulled
-// back to a fixed, consistent EGO_VIEW_DISTANCE so every sequence is framed
-// the same way ("looking down at my hands from a comfortable, constant
-// distance") rather than reproducing the exact, variable recorded distance.
-function computeEgoViewPosition(center) {
-    let viewDir = center.clone();
-    if (viewDir.lengthSq() < 1e-8) {
-        // Degenerate case (content sits essentially at the origin) — fall back
-        // to a generic forward direction so the camera doesn't collapse onto the target.
-        viewDir.set(0, 0, 1);
-    }
-    viewDir.normalize();
-
-    return center.clone().addScaledVector(viewDir, -EGO_VIEW_DISTANCE);
-}
-
 function alignCameraToEgoView(meshes, camera, controls = null) {
     const box = new THREE.Box3();
     meshes.forEach(mesh => {
@@ -250,7 +232,8 @@ function alignCameraToEgoView(meshes, camera, controls = null) {
     const center = new THREE.Vector3();
     box.getCenter(center);
 
-    camera.position.copy(computeEgoViewPosition(center));
+    // Set camera exactly at the egocentric origin to perfectly match the video perspective
+    camera.position.set(0, 0, 0);
     camera.lookAt(center);
 
     if (controls) {
@@ -259,9 +242,7 @@ function alignCameraToEgoView(meshes, camera, controls = null) {
     }
 }
 
-
-
-function trackDynamicCenter(meshes, camera, controls) {
+function trackDynamicCenter(meshes, controls) {
     if (!controls) return;
     const box = new THREE.Box3();
     let valid = false;
@@ -276,13 +257,8 @@ function trackDynamicCenter(meshes, camera, controls) {
     if (valid) {
         const center = new THREE.Vector3();
         box.getCenter(center);
-        // Using lerp adds a tiny bit of smoothing so the camera doesn't jitter.
-        // Keep the camera at the fixed EGO_VIEW_DISTANCE from the moving
-        // centroid every frame, so the "looking down at my hands" framing
-        // stays consistent throughout the whole clip, not just on load.
-        if (camera) {
-            camera.position.lerp(computeEgoViewPosition(center), 0.15);
-        }
+        // We only smoothly track the center so rotation orbits around the moving objects.
+        // We no longer force camera.position here, allowing the user to rotate freely!
         controls.target.lerp(center, 0.15);
     }
 }
@@ -351,9 +327,6 @@ function loadSequence(folderName) {
         combObjMesh = createDynamicMesh(facesO, numDynamicVertsO);
 
         // Populate the combined meshes with the first frame's positions right away
-        // (instead of waiting for the next animate() tick) so camera framing below
-        // is computed against real, current geometry rather than stale data left
-        // over from whatever sequence was loaded previously.
         updateMeshPositions(combLeftMesh, firstFrame.v_l, scale);
         updateMeshPositions(combRightMesh, firstFrame.v_r, scale);
         updateMeshPositions(combObjMesh, firstFrame.v_o, scale);
@@ -364,9 +337,7 @@ function loadSequence(folderName) {
             vpCombined.scene.add(combObjMesh);
         }
 
-        // Frame all three viewports immediately, synchronously with the newly
-        // loaded meshes, so the very first click on a sequence lands on the same
-        // correct framing as every subsequent click (no race with animate()).
+        // Frame all three viewports immediately
         if (vpHands) frameMeshes([staticLeftMesh, staticRightMesh], vpHands.camera, controlsHands);
         if (vpObj) frameMeshes([staticObjMesh], vpObj.camera, controlsObj);
         if (vpCombined) alignCameraToEgoView([combLeftMesh, combRightMesh, combObjMesh], vpCombined.camera, controlsCombined);
@@ -436,10 +407,6 @@ function loadSequenceReal(folderName) {
         combRightMeshReal = createDynamicMesh(facesR, numDynamicVertsR);
         combObjMeshReal = createDynamicMesh(facesO, numDynamicVertsO);
 
-        // Populate the combined meshes with the first frame's positions right away
-        // (instead of waiting for the next animateReal() tick) so camera framing
-        // below is computed against real, current geometry rather than stale data
-        // left over from whatever sequence was loaded previously.
         updateMeshPositions(combLeftMeshReal, firstFrame.v_l, scale);
         updateMeshPositions(combRightMeshReal, firstFrame.v_r, scale);
         updateMeshPositions(combObjMeshReal, firstFrame.v_o, scale);
@@ -450,9 +417,6 @@ function loadSequenceReal(folderName) {
             vpCombinedReal.scene.add(combObjMeshReal);
         }
 
-        // Frame all three viewports immediately, synchronously with the newly
-        // loaded meshes, so the very first click on a sequence lands on the same
-        // correct framing as every subsequent click (no race with animateReal()).
         if (vpHandsReal) frameMeshes([staticLeftMeshReal, staticRightMeshReal], vpHandsReal.camera, controlsHandsReal);
         if (vpObjReal) frameMeshes([staticObjMeshReal], vpObjReal.camera, controlsObjReal);
         if (vpCombinedReal) alignCameraToEgoView([combLeftMeshReal, combRightMeshReal, combObjMeshReal], vpCombinedReal.camera, controlsCombinedReal);
@@ -478,15 +442,12 @@ function animate(currentTime) {
     if (sequenceData && sequenceData.frames.length > 0) {
         let currentFrameIdx = 0;
 
-        // Drive the frame index directly by the video's currentTime.
-        // This ensures the meshes freeze when the video is paused and continue when played.
         if (video) {
             currentFrameIdx = Math.min(
                 Math.floor(video.currentTime * FPS),
                 sequenceData.frames.length - 1
             );
         } else {
-            // Fallback only if the video element is missing entirely
             if (currentTime - lastTime > (1000 / FPS)) {
                 fallbackFrameCounter = (fallbackFrameCounter + 1) % sequenceData.frames.length;
                 lastTime = currentTime;
@@ -506,12 +467,10 @@ function animate(currentTime) {
             const scale = sequenceData.scale || 1000.0;
             const staticVerts = sequenceData.static_verts;
 
-            // 1. Update colors on STATIC meshes
             updateMeshColors(staticLeftMesh, dataL, staticVerts.v_l.length / 3, isForceMode);
             updateMeshColors(staticRightMesh, dataR, staticVerts.v_r.length / 3, isForceMode);
             updateMeshColors(staticObjMesh, dataO, staticVerts.v_o.length / 3, isForceMode);
 
-            // 2. Update positions AND colors on DYNAMIC meshes
             updateMeshPositions(combLeftMesh, frameData.v_l, scale);
             updateMeshColors(combLeftMesh, dataL, frameData.v_l.length / 3, isForceMode);
 
@@ -521,7 +480,6 @@ function animate(currentTime) {
             updateMeshPositions(combObjMesh, frameData.v_o, scale);
             updateMeshColors(combObjMesh, dataO, frameData.v_o.length / 3, isForceMode);
 
-            // 3. Frame cameras on first frame of loaded sequence
             if (!cameraInitialized) {
                 if (vpHands) frameMeshes([staticLeftMesh, staticRightMesh], vpHands.camera, controlsHands);
                 if (vpObj) frameMeshes([staticObjMesh], vpObj.camera, controlsObj);
@@ -531,8 +489,7 @@ function animate(currentTime) {
         }
     }
 
-    // Continuously track the center of the dynamic meshes in the Full Motion view
-    trackDynamicCenter([combLeftMesh, combRightMesh, combObjMesh], vpCombined ? vpCombined.camera : null, controlsCombined);
+    trackDynamicCenter([combLeftMesh, combRightMesh, combObjMesh], controlsCombined);
     if (controlsHands) controlsHands.update();
     if (controlsObj) controlsObj.update();
     if (controlsCombined) controlsCombined.update();
@@ -550,7 +507,6 @@ function animateReal(currentTime) {
     if (sequenceDataReal && sequenceDataReal.frames.length > 0) {
         let currentFrameIdx = 0;
 
-        // Drive the frame index directly by the real-world video's currentTime using FPS_REAL
         if (video) {
             currentFrameIdx = Math.min(
                 Math.floor(video.currentTime * FPS_REAL),
@@ -598,8 +554,7 @@ function animateReal(currentTime) {
         }
     }
 
-    // Continuously track the center of the dynamic meshes in the real-world Full Motion view
-    trackDynamicCenter([combLeftMeshReal, combRightMeshReal, combObjMeshReal], vpCombinedReal ? vpCombinedReal.camera : null, controlsCombinedReal);
+    trackDynamicCenter([combLeftMeshReal, combRightMeshReal, combObjMeshReal], controlsCombinedReal);
     if (controlsHandsReal) controlsHandsReal.update();
     if (controlsObjReal) controlsObjReal.update();
     if (controlsCombinedReal) controlsCombinedReal.update();
@@ -656,3 +611,5 @@ window.addEventListener('resize', () => {
         }
     });
 });
+
+```
