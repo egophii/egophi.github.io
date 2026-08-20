@@ -62,6 +62,9 @@ const controlsObj = vpObj ? new THREE.OrbitControls(vpObj.camera, vpObj.renderer
 if (controlsObj) controlsObj.enableDamping = true;
 
 const vpCombined = createViewport('combinedCanvasContainer');
+// Flip the camera's up vector so the ego-view (Full Motion) render matches
+// the RGB video's orientation instead of appearing upside-down.
+if (vpCombined) vpCombined.camera.up.set(0, -1, 0);
 const controlsCombined = vpCombined ? new THREE.OrbitControls(vpCombined.camera, vpCombined.renderer.domElement) : null;
 if (controlsCombined) controlsCombined.enableDamping = true;
 
@@ -77,6 +80,9 @@ const controlsObjReal = vpObjReal ? new THREE.OrbitControls(vpObjReal.camera, vp
 if (controlsObjReal) controlsObjReal.enableDamping = true;
 
 const vpCombinedReal = createViewport('combinedCanvasContainerReal');
+// Flip the camera's up vector so the ego-view (Full Motion) render matches
+// the RGB video's orientation instead of appearing upside-down.
+if (vpCombinedReal) vpCombinedReal.camera.up.set(0, -1, 0);
 const controlsCombinedReal = vpCombinedReal ? new THREE.OrbitControls(vpCombinedReal.camera, vpCombinedReal.renderer.domElement) : null;
 if (controlsCombinedReal) controlsCombinedReal.enableDamping = true;
 
@@ -313,11 +319,27 @@ function loadSequence(folderName) {
         combRightMesh = createDynamicMesh(facesR, numDynamicVertsR);
         combObjMesh = createDynamicMesh(facesO, numDynamicVertsO);
 
+        // Populate the combined meshes with the first frame's positions right away
+        // (instead of waiting for the next animate() tick) so camera framing below
+        // is computed against real, current geometry rather than stale data left
+        // over from whatever sequence was loaded previously.
+        updateMeshPositions(combLeftMesh, firstFrame.v_l, scale);
+        updateMeshPositions(combRightMesh, firstFrame.v_r, scale);
+        updateMeshPositions(combObjMesh, firstFrame.v_o, scale);
+
         if (vpCombined) {
             vpCombined.scene.add(combLeftMesh);
             vpCombined.scene.add(combRightMesh);
             vpCombined.scene.add(combObjMesh);
         }
+
+        // Frame all three viewports immediately, synchronously with the newly
+        // loaded meshes, so the very first click on a sequence lands on the same
+        // correct framing as every subsequent click (no race with animate()).
+        if (vpHands) frameMeshes([staticLeftMesh, staticRightMesh], vpHands.camera, controlsHands);
+        if (vpObj) frameMeshes([staticObjMesh], vpObj.camera, controlsObj);
+        if (vpCombined) alignCameraToEgoView([combLeftMesh, combRightMesh, combObjMesh], vpCombined.camera, controlsCombined);
+        cameraInitialized = true;
 
         if (!isLoopRunning) {
             isLoopRunning = true;
@@ -383,11 +405,27 @@ function loadSequenceReal(folderName) {
         combRightMeshReal = createDynamicMesh(facesR, numDynamicVertsR);
         combObjMeshReal = createDynamicMesh(facesO, numDynamicVertsO);
 
+        // Populate the combined meshes with the first frame's positions right away
+        // (instead of waiting for the next animateReal() tick) so camera framing
+        // below is computed against real, current geometry rather than stale data
+        // left over from whatever sequence was loaded previously.
+        updateMeshPositions(combLeftMeshReal, firstFrame.v_l, scale);
+        updateMeshPositions(combRightMeshReal, firstFrame.v_r, scale);
+        updateMeshPositions(combObjMeshReal, firstFrame.v_o, scale);
+
         if (vpCombinedReal) {
             vpCombinedReal.scene.add(combLeftMeshReal);
             vpCombinedReal.scene.add(combRightMeshReal);
             vpCombinedReal.scene.add(combObjMeshReal);
         }
+
+        // Frame all three viewports immediately, synchronously with the newly
+        // loaded meshes, so the very first click on a sequence lands on the same
+        // correct framing as every subsequent click (no race with animateReal()).
+        if (vpHandsReal) frameMeshes([staticLeftMeshReal, staticRightMeshReal], vpHandsReal.camera, controlsHandsReal);
+        if (vpObjReal) frameMeshes([staticObjMeshReal], vpObjReal.camera, controlsObjReal);
+        if (vpCombinedReal) alignCameraToEgoView([combLeftMeshReal, combRightMeshReal, combObjMeshReal], vpCombinedReal.camera, controlsCombinedReal);
+        cameraInitializedReal = true;
 
         if (!isLoopRunningReal) {
             isLoopRunningReal = true;
